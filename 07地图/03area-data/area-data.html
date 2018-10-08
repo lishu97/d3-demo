@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+	</head>
+	<body>
+		<script src="../../common/lib/d3.v3.min.js" type="text/javascript" charset="utf-8"></script>
+		<script src="../resource/topojson.js" type="text/javascript" charset="utf-8"></script>
+		<script type="text/javascript">
+			// svg
+			var height = 600
+			var width = 700
+			var svg = d3.select('body')
+				.append('svg')
+				.attr('height', height)
+				.attr('width', width)
+			
+			// defs
+			var defs = svg.append('defs')
+			var linearGradient = defs.append('linearGradient')
+				.attr('id', 'linearColor')
+				.attr('x1', '0%')
+				.attr('y1', '0%')
+				.attr('x2', '100%')
+				.attr('y2', '0%')
+			var a = d3.rgb(0, 255, 255)
+			var b = d3.rgb(0, 0, 255)
+			var stop1 = linearGradient.append('stop')
+				.attr('offset', '0%')
+				.style('stop-color', a.toString())
+			var stop2 = linearGradient.append('stop')
+				.attr('offset', '100%')
+				.style('stop-color', b.toString())
+			
+			// 所有省份绘制的容器
+			var provinces = svg.append('g')
+			drawPath()
+			
+			/* 绘制各省 */
+			function drawPath() {
+				// 投影
+				var projection = d3.geo.mercator()
+					.center([107, 31])
+					.scale(600)
+					.translate([width / 2, height * 2 / 3])
+				
+				// 路径生成器
+				var path = d3.geo.path()
+					.projection(projection)
+						
+				d3.json('../resource/china.topojson', function(error, toporoot) {
+					if(error) {
+						return console.error(error)
+					}
+					// 格式转换：topojson => geojson
+					var georoot = topojson.feature(toporoot, toporoot.objects.china)
+					// 添加数据残缺字段
+					georoot.features[1].properties.name_local = '青海'
+					// 绘制各省路径
+					provinces.selectAll('path')
+						.data(georoot.features)
+						.enter()
+						.append('path')
+						.attr('class', 'province')
+						.attr('d', path)
+						.style('fill', function(d) {
+						})
+					fillColor()
+				})
+			}
+			
+			/* 为各省填充颜色 */
+			function fillColor() {
+				d3.json('../resource/tourism.json', function(error, valuedata) {
+					// 将原数据内容整理存入values数组
+					var values = []
+					for(var i = 0, len = valuedata.provinces.length; i < len; i++) {
+						var name = valuedata.provinces[i].name
+						var value = valuedata.provinces[i].value
+						values[name] = value
+					}
+					// 求最大值和最小值
+					var maxvalue = d3.max(valuedata.provinces, function(d) {
+						return d.value
+					})
+					var minvalue = 0
+
+					// 定义一个线性比例尺，将最小值和最大值之间的值映射到【0， 1】
+					var linear = d3.scale.linear()
+						.domain([minvalue, maxvalue])
+						.range([0, 1])
+							
+					// 定义插值函数
+					var computeColor = d3.interpolate(a, b)
+					
+					// 开始填充颜色
+					provinces.selectAll('path')
+						.style('fill', function(d, i) {
+							// 绑定数据中的值与values数组的key不能完全匹配，需要进行处理，处理好的值用key存储
+							var provinceName = undefined
+							var localName = d.properties.name_local
+							if(localName) {
+								var provinceNameArr = localName.split('|')
+								provinceName = provinceNameArr.pop()
+							}
+							
+							// 调用比例尺
+							var t = linear(values[provinceName])
+							// 调用插值
+							var color = computeColor(t)
+							return color.toString()
+						})
+					// 绘制色块标识
+					var colorRect = svg.append('rect')
+						.attr('x', 50)
+						.attr('y', 570)
+						.attr('width', 600)
+						.attr('height', 20)
+						.style('fill', 'url(#'+ linearGradient.attr('id') +')')
+					var minColorValue = svg.append('text')
+						.attr('x', colorRect.attr('x'))
+						.attr('y', colorRect.attr('y') - 5)
+						.text(minvalue)
+						.style('font-size', 12)
+						.style('text-anchor', 'middle')
+					var MaxColorValue = svg.append('text')
+						.attr('x', Number(colorRect.attr('x')) + Number(colorRect.attr('width')))
+						.attr('y', colorRect.attr('y') - 5)
+						.text(maxvalue)
+						.style('font-size', 12)
+						.style('text-anchor', 'middle')
+					var title = svg.append('text')
+						.attr('x', colorRect.attr('x'))
+						.attr('y', Number(colorRect.attr('y'))- parseInt(minColorValue.style('font-size')) -  5 * 2)
+						.html('旅游业产值')
+						.style('font-size', 12)
+						.style('text-anchor', 'middle')
+				})
+				
+			}
+		
+			/* 标注 */
+			function mark() {
+				var projection = d3.geo.mercator()
+			}
+		</script>
+	</body>
+</html>

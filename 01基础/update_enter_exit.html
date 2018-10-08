@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>D3.js</title>
+	</head>
+	<body>
+		<h1>打开控制台查看update/enter/exit对象</h1>
+		<p>0</p>
+		<p>1</p>
+		<p>2</p>
+		<!-- 测试exit时候解开下列注释 -->
+		<!-- <p>3</p>
+		<p>4</p>
+		<p>5</p>
+		<p>6</p> -->
+		<script src="../common/lib/d3.v3.min.js" type="text/javascript" charset="utf-8"></script>
+		<script type="text/javascript">
+			var dataset = ["a","b","c","d","e"];
+			var p = d3.select('body')
+				.selectAll('p')
+			
+		
+			var update = p.data(dataset)
+			console.log('update:', update);
+			console.log('update.enter():', update.enter());
+			console.log('update.exit()', update.exit());
+
+			// 为数据和DOM元素容器匹配的部分更新内容
+			update.text(function(d, i) {
+					return d + i;
+				})
+
+			// 为超出DOM元素容器部分的数据添加DOM元素，并设置内容
+			update.enter()
+				.append('p')
+				.text(function(d, i){
+					return d + i;
+				})
+
+			/*测试exit时候解开下列注释*/
+			// 数据不足以填充DOM元素容器时，移除多余的DOM元素
+			// update.exit()
+			// 		.remove();
+			// console.log(update.exit());
+			
+		</script>
+	</body>
+</html>

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+	</head>
+	<body>
+		<h1>指向图形滑动滚轮进行缩放</h1>
+		<script src="../common/lib/d3.v3.min.js" type="text/javascript" charset="utf-8"></script>
+		<script type="text/javascript">
+			var height = 400
+			var width = 400
+			
+			var svg = d3.select('body')
+					.append('svg')
+					.attr('height', height)
+					.attr('width', width)
+					
+			var circles = [
+				{
+					cx: 100,
+					cy: 100,
+					r: 80
+				},
+				{
+					cx: 300,
+					cy: 100,
+					r: 80
+				},
+				{
+					cx: 100,
+					cy: 300,
+					r: 80
+				},
+				{
+					cx: 300,
+					cy: 300,
+					r: 80
+				}
+			]
+			var zoom = d3.behavior.zoom()
+				.scaleExtent([1, 10])
+				.on('zoom', function(d) {
+					console.log('zoom')
+					d3.select(this)
+						.attr('transform', 'translate(' + d3.event.translate + ')' + 'scale(' + d3.event.scale + ')')
+				})
+				.on('zoomstart', function() {
+					console.log('zoomstart')
+				})
+				.on('zoomend', function() {
+					console.log('zoomend')
+				})
+				
+			var g = svg.append('g')
+				.call(zoom)
+				
+			g.selectAll('circle')
+				.data(circles)
+				.enter()
+				.append('circle')
+				.attr('cx', function(d) { return d.cx })
+				.attr('cy', function(d) { return d.cy })
+				.attr('r', function(d) { return d.r })
+		</script>
+	</body>
+</html>

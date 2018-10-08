@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+		<style type="text/css">
+			body{
+					-webkit-user-select:none;
+						 -moz-user-select:none;
+							-ms-user-select:none;
+									user-select:none;
+			}
+		</style>
+	</head>
+	<body>
+		<script src="../common/lib/d3.v3.min.js" type="text/javascript" charset="utf-8"></script>
+		<script type="text/javascript">
+			var height = 800
+			var width = 800
+			var svg = d3.select('body')
+				.append('svg')
+				.attr('height', height)
+				.attr('width', width)
+			var nodes = [
+				{name: '0'},
+				{name: '1'},
+				{name: '2'},
+				{name: '3'},
+				{name: '4'},
+				{name: '5'},
+				{name: '6'}
+			]
+			var edges = [
+				{source: 0, target: 1},
+				{source: 0, target: 2},
+				{source: 0, target: 3},
+				{source: 1, target: 4},
+				{source: 1, target: 5},
+				{source: 1, target: 6}
+			]
+			
+			var force = d3.layout.force()
+				.nodes(nodes)
+				.links(edges)
+				.size([height, width])
+				.linkDistance(90)
+				.charge(-400)
+			force.start()
+			console.log(nodes)
+			console.log(edges)
+			// 颜色序列尺
+			var color = d3.scale.category10()
+			// 线条添加
+			var lines = svg.selectAll('.forceLine')
+				.data(edges)
+				.enter()
+				.append('line')
+				.attr('class', 'forceLine')
+				.attr('stroke','#000')
+			// 圆点添加
+			var circles = svg.selectAll('.forceCircle')
+				.data(nodes)
+				.enter()
+				.append('circle')
+				.attr('class', 'forceCircle')
+				.attr('r', 20)
+				.style('fill', function(d, i) { return color(i) })
+				.call(force.drag)
+			// 文本添加
+			var texts = svg.selectAll('text')
+				.data(nodes)
+				.enter()
+				.append('text')
+				.attr('class', 'forceText')
+				.attr('x', function(d) { return d.x })
+				.attr('y', function(d) { return d.y })
+				.attr('dy', '.3em')
+				.text(function(d) { return d.name })
+			// tick事件的监听器
+			force.on('tick', function() {
+				// 更新连线的终端坐标
+				lines.attr('x1', function(d) { return d.source.x })
+				lines.attr('y1', function(d) { return d.source.y })
+				lines.attr('x2', function(d) { return d.target.x })
+				lines.attr('y2', function(d) { return d.target.y })
+				// 更新节点坐标
+				circles.attr('cx', function(d) { return d.x })
+				circles.attr('cy', function(d) { return d.y })
+				// 更新节点文字的坐标
+				texts.attr('x', function(d) { return d.x })
+				texts.attr('y', function(d) { return d.y })
+			})
+			// start事件的监听器
+			force.on('start', function() {
+				console.log('start')
+			})
+			// end事件的监听器
+			force.on('end', function() {
+				console.log('end')
+			})
+			
+			var drag = force.drag()
+				// 开始拖动：颜色高亮显示
+				.on('dragstart', function(d) {
+					console.log('拖动开始')
+					d3.select(this).style('fill', d3.rgb(color(i)).brighter())
+				})
+				// 拖动结束：固定位置、颜色恢复
+				.on('dragend', function(d, i) {
+					console.log('拖动结束')
+					d.fixed = true
+					d3.select(this).style('fill', color(i))
+				})
+				// 拖动中：颜色变亮
+				.on('dragstart', function() {
+					console.log('拖动中')
+				})
+		</script>
+	</body>
+</html>

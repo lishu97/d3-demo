@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+		<style type="text/css">
+			/*svg{
+				float: right;
+				margin-top: 100px;
+			}*/
+		</style>
+	</head>
+	<body>
+		<h1>使用触屏模式操作</h1>
+		<script src="../common/lib/d3.v3.min.js" type="text/javascript" charset="utf-8"></script>
+		<script type="text/javascript">
+			var svg = d3.select('body')
+					.append('svg')
+					.attr('height', 500)
+					.attr('width', 500)
+			var circle = svg.append('circle')
+					.attr('cx', 250)
+					.attr('cy', 250)
+					.attr('r', 100)
+					.attr('fill', 'red')
+					.on('touchstart', function() {
+						console.log('touchstart')
+						circle.attr('fill', 'yellow')
+					})
+					.on('touchmove', function() {
+						console.log('touchmove')
+						// console.log(d3.touches(this))
+						var pos = d3.touches(this)[0]
+						d3.select(this)
+							.attr('cx', pos[0])
+							.attr('cy', pos[1])
+					})
+					.on('touchend', function() {
+						console.log('touchend')
+						circle.attr('fill', 'red')
+					})
+		</script>
+	</body>
+</html>

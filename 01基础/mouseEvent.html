@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+	</head>
+	<h1>打开控制台查看日志打印</h1>
+	<body>
+		<script src="../common/lib/d3.v3.min.js" type="text/javascript" charset="utf-8"></script>
+		<script type="text/javascript">
+		var svg = d3.select('body')
+			.append('svg')
+			.attr('height', 500)
+			.attr('width', 500)
+		var circle = svg.append('circle')
+			.attr('cx', 250)
+			.attr('cy', 250)
+			.attr('r', 100)
+			.attr('fill', 'red')
+			.on('click.second', function() {
+				console.log('click2')
+			})
+			.on('click.first', function() {
+				console.log('click1 => off:click.second')
+				circle.on('click.second', null)
+			})
+			.on('mouseover', function() {
+				console.log('mouseover')
+			})
+			.on('mouseout', function() {
+				console.log('mouseout')
+			})
+			.on('mousedown', function() {
+				console.log('mousedown')
+			})
+			.on('mouseup', function() {
+				console.log('mouseup')
+			})
+			 
+		</script>
+	</body>
+</html>

@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+	<head>
+			<meta charset="UTF-8">
+			<title>带动画效果的散点图</title>
+			<style type="text/css">
+				body{
+					padding-left: 300px;
+				}
+			</style>
+	</head>
+	<body>
+		<div id="svg"></div>
+		<br />
+		<button onclick="update()">更新</button>
+		<button onclick="add()">增加</button>
+		<button onclick="sub()">减少</button>
+		
+		
+		<script src="../common/lib/d3.v3.min.js" type="text/javascript" charset="utf-8"></script>
+		<script type="text/javascript">
+			// 初始数据
+			var center = [[0.5, 0.5], [0.7, 0.8], [0.4, 0.9], 
+						[0.11, 0.32], [0.88, 0.25], [0.75, 0.15], 
+						[0.5, 0.1], [0.2, 0.3], [0.4, 0.1], [0.6, 0.7]]
+			
+			// svg宽高、内边距
+			var height = 500
+			var width = 600
+			var padding = {
+				top: 30,
+				right:30,
+				bottom:30,
+				left:40
+			}
+			
+			// 在body内添加svg
+			var svg = d3.select('#svg')
+					.append('svg')
+					.attr('height', height)
+					.attr('width', width)
+					
+			// 比例尺
+			var xAxisWidth = 300
+				var yAxisWidth = 300
+			var xScale = d3.scale
+					.linear()
+					.domain([0, 1])
+					.range([0, xAxisWidth])
+			var yScale = d3.scale
+					.linear()
+					.domain([0, 1])
+					.range([0, yAxisWidth])
+
+			// 绘制坐标轴
+			function drawAxis() {
+				// x轴的生成器
+				var xAxis = d3.svg.axis()
+						.scale(xScale)
+						.orient('bottom')
+						.ticks(5)
+				// 重新定义y轴比例尺的值域
+				yScale.range([yAxisWidth, 0])
+				// y轴的生成器
+				var yAxis = d3.svg.axis()
+						.scale(yScale)
+						.orient('left')
+						.ticks(5)
+						
+				// 绘制x轴
+				svg.append('g')
+						.attr('class', 'axis')
+						.attr('transform', function() {
+							return 'translate(' + padding.left + ',' + (height - padding.bottom) + ')'
+						})
+						.call(xAxis)
+				// 绘制y轴
+				svg.append('g')
+						.attr('class', 'axis')
+						.attr('transform', function() {
+							return 'translate(' + padding.left + ',' + (height - padding.bottom - yAxisWidth) + ')'
+						})
+						.call(yAxis)
+				// 坐标绘制完成，将y值域换回去
+				yScale.range([0, yAxisWidth]) 
+				
+				// 修改样式
+				svg.selectAll('text')
+					.attr('stroke', 'none')
+					.attr('fill', 'black')
+				svg.selectAll('path')
+					.attr('stroke', 'black')
+					.attr('fill', 'none')
+				svg.selectAll('line')
+					.attr('stroke', 'black')
+					.attr('fill', 'none')
+			}
+			// 初次显示图表
+			function init() {
+				svg.selectAll('circle')
+						.data(center)
+						.enter()
+						.append('circle')
+						.attr('fill', 'black')
+						.attr('cx', function(d) {
+							return padding.left
+						})
+						.attr('cy', function(d) {
+							return height - padding.bottom
+						})
+						.attr('r', 7)
+						.transition()
+						.duration(1500)
+						.attr('cx', function(d) {
+							return padding.left + xScale(d[0])
+						})
+						.attr('cy', function(d) {
+							return height - padding.bottom - yScale(d[1])
+						})
+
+			}
+			// 更新图标
+			function update() {
+				for(i = 0, len = center.length; i < len; i++){
+					center[i][0] = Math.random()
+					center[i][1] = Math.random()
+				}
+				svg.selectAll('circle')
+					.data(center)
+					.transition()
+					.duration(1500)
+					.attr('cx', function(d) {
+						return padding.left + xScale(d[0])
+					})
+					.attr('cy', function(d) {
+						return height - padding.bottom - yScale(d[1])
+					})
+			}
+			// 新增点
+			function add() {
+				center.push([Math.random(), Math.random()])
+				svg.selectAll('circle')
+					.data(center)
+					.enter()
+					.append('circle')
+					.attr('fill', 'black')
+					.attr('cx', padding.left)
+					.attr('cy', height - padding.bottom)
+					.attr('r', 7)
+					.transition()
+					.duration(1500)
+					.attr('cx', function(d) {
+						return padding.left + xScale(d[0])
+					})
+					.attr('cy', function(d) {
+						return height - padding.bottom - yScale(d[1])
+					})
+			}
+			// 删除点
+			function sub() {
+				center.pop()
+				svg.selectAll('circle')
+					.data(center)
+					.exit()
+					.transition()
+					.duration(1500)
+					.ease('bounce')
+					.style('opacity', '0')
+					.remove()
+			}
+			drawAxis()
+			init()
+		</script>
+	</body>
+</html>

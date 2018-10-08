@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+	</head>
+	<body>
+	  <script src="../../common/lib/d3.v3.min.js" type="text/javascript" charset="utf-8"></script>
+	  <script src="../resource/topojson.js" type="text/javascript" charset="utf-8"></script>
+	  <script type="text/javascript">
+	  	// svg
+      const height = 600
+      const width = 700
+      const svg = d3.select('body')
+          .append('svg')
+          .attr('height', height)
+          .attr('width', width)
+      
+      const color = d3.scale.category20()
+      
+      const defs = svg.append('defs')
+      const arrowMarker = defs.append('marker')
+          .attr('id', 'arrow')
+          .attr('markerUnits', 'strokeWidth')
+          .attr('markerWidth', '12')
+          .attr('markerHeight', '12')
+          .attr('viewBox', '0 0 12 12')
+          .attr('refX', '6')
+          .attr('refY', '6')
+          .attr('orient', 'auto')
+      const arrow_path = 'M2,2 L10,6 L2,10 L6,6 L2,2'
+      arrowMarker.append('path')
+          .attr('d', arrow_path)
+          .attr('fill', '#000')
+          
+      const startMarker = defs.append('marker')
+          .attr('id', 'startMarker')
+          .attr('markerUnits', 'strokeWidth')
+          .attr('markerWidth', '12')
+          .attr('markerHeight', '12')
+          .attr('viewBox', '0 0 12 12')
+          .attr('refX', '6')
+          .attr('refY', '6')
+          .attr('orient', 'auto')
+          
+      startMarker.append('circle')
+          .attr('cx', '6')
+          .attr('cy', '6')
+          .attr('r', '3')
+          .attr('fill', '#000')
+      
+      // 所有省份绘制的容器
+      let provinces = svg.append('g')
+      drawPath()
+      
+      /* 绘制各省 */
+      function drawPath() {
+        // 投影
+        const projection = d3.geo.mercator()
+            .center([107, 31])
+            .scale(600)
+            .translate([width / 2, height * 2 / 3])
+        
+        // 路径生成器
+        const path = d3.geo.path()
+            .projection(projection)
+            
+        d3.json('../resource/china.topojson', function(error, toporoot) {
+          if(error) {
+            return console.error(error)
+          }
+          // 格式转换：topojson => geojson
+          const georoot = topojson.feature(toporoot, toporoot.objects.china)
+          // 添加数据残缺字段
+          georoot.features[1].properties.name_local = '青海'
+          // 绘制各省路径
+          provinces.selectAll('path')
+              .data(georoot.features)
+              .enter()
+              .append('path')
+              .attr('class', 'province')
+              .attr('d', path)
+              .style('fill', '#888')
+        })
+        drawArrow()
+      }
+      function drawArrow() {
+        const projection = d3.geo.mercator()
+            .center([107, 31])
+            .scale(600)
+            .translate([width / 2, height * 2 / 3])
+        const peking = projection([116.3, 39.9])
+        const guilin = projection([110.3, 25.3])
+        
+        svg.append('line')
+            .attr('class', 'route')
+            .attr('x1', guilin[0])
+            .attr('y1', guilin[1])
+            .attr('x2', peking[0])
+            .attr('y2', peking[1])
+            .attr('marker-end', 'url(#arrow)')
+            .attr('marker-start', 'url(#startMarker)')
+            .style('stroke', '#000')
+      }
+	  </script>
+	</body>
+</html>

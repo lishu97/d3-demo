@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>行政案件类别</title>
+		<style>
+			html,
+			body{
+				height: 100%;
+				width: 100%;
+			}
+		</style>
+	</head>
+	<body>
+		<svg height="600" width="800">
+			<defs>
+				<pattern id="patternFill" x="7" y="7" width="10px" height="10px" patternUnits="userSpaceOnUse">
+					<g>
+						<rect height="10" width="10" fill="#2c0d74" />
+						<rect height="7" width="7" fill="#1e0266" />
+					</g>
+				</pattern>
+				<linearGradient id="grad1" x1="0" y1="0" x2="0" y2="1">
+					<stop offset="0%" stop-color="rgb(117, 48, 193)"   stop-opacity="1"/>
+					<stop offset="100%" stop-color="rgb(117, 48, 193)"   stop-opacity="0"/>
+				</linearGradient>
+				<linearGradient id="grad2" x1="0" y1="0" x2="0" y2="1">
+					<stop offset="0%" stop-color="rgb(62, 82, 194)"   stop-opacity="1"/>
+					<stop offset="100%" stop-color="rgb(62, 82, 194)"   stop-opacity="0"/>
+				</linearGradient>
+				<linearGradient id="grad3" x1="0" y1="0" x2="0" y2="1">
+					<stop offset="0%" stop-color="rgb(73, 139, 225)"   stop-opacity="1"/>
+					<stop offset="100%" stop-color="rgb(73, 139, 225)"   stop-opacity="0"/>
+				</linearGradient>
+				<linearGradient id="grad4" x1="0" y1="0" x2="0" y2="1">
+					<stop offset="0%" stop-color="rgb(158, 96, 121)"  stop-opacity="1"/>
+					<stop offset="100%" stop-color="rgb(158, 96, 121)"  stop-opacity="0"/>
+				</linearGradient>
+				<linearGradient id="grad5" x1="0" y1="0" x2="0" y2="1">
+					<stop offset="0%" stop-color="rgb(140, 68, 193)" stop-opacity="1"/>
+					<stop offset="100%" stop-color="rgb(140, 68, 193)"  stop-opacity="0"/>
+				</linearGradient>
+			</defs>
+			<rect fill="url(#patternFill)" width="100%" height="100%" />
+		</svg>
+		<script src="lib/d3.v3.min.js" type="text/javascript" charset="utf-8"></script>
+		<script src="lib/jquery.min.js" type="text/javascript" charset="utf-8"></script>
+		<script src="lib/mock.js" type="text/javascript" charset="utf-8"></script>
+		<script src="js/mockdata.js" type="text/javascript" charset="utf-8"></script>
+		<script src="js/index.js" type="text/javascript" charset="utf-8"></script>
+	</body>
+</html>

@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+		<style type="text/css">
+			html,
+			body {
+				height: 100%;
+				width: 100%;
+			}
+		</style>
+	</head>
+	<body>
+		<svg>
+			<defs>
+				<marker id="xArrow" markerWidth="14" markerHeight="20" refx="3" refy="12">
+					<path d="M2,6 L2,12 L10,9 Z" fill="#000" />
+				</marker>
+				<marker id="yArrow" markerWidth="14" markerHeight="20" refx="0" refy="7">
+					<path d="M0,8 L3,0 L6,8 Z" fill="#000" />
+				</marker>
+			</defs>
+		</svg>
+		<script src="../common/lib/jquery.min.js" type="text/javascript" charset="utf-8"></script>
+		<script src="../common/lib/mock.js" type="text/javascript" charset="utf-8"></script>
+		<script src="../common/lib/d3.v3.min.js" type="text/javascript" charset="utf-8"></script>
+		<script src="../common/js/mockdata.js" type="text/javascript" charset="utf-8"></script>
+		<script type="text/javascript">
+			
+			var center = []
+			$.getJSON("http://127.0.0.1:8080",function(data) {
+				center = data.center
+			}).then(function() {
+				/*center.shift()
+				center.unshift([0,0])
+				center.pop()
+				center.push([center.length, 0])
+				console.log(center)*/
+				var svgConfig = {
+					height: 500,
+					width: 800,
+					top: 50,
+					bottom: 50,
+					left: 50,
+					right: 50
+				}
+				var svg = d3.select("body")
+					.select("svg")
+					.attr("height", svgConfig.height)
+					.attr("width", svgConfig.width)
+				//定义x比例尺
+				var xScale = d3.scale.linear()
+					.domain([
+						0, 
+						d3.max(center, function(d) {
+							return d[0]
+						}) * 1.2
+					])
+					.range([0, svgConfig.width - svgConfig.left - svgConfig.right])
+				//定义y比例尺
+				var yScale = d3.scale.linear()
+					.domain([
+						0,
+						d3.max(center, function(d) {
+							return d[1]
+						}) * 1.1
+					])
+					.range([svgConfig.height - svgConfig.top - svgConfig.bottom, 0])
+				//添加圆点
+				const circleRadiu = 2
+				const circlePadding = (svgConfig.width - 2 * circleRadiu * center.length - svgConfig.left - svgConfig.right) / center.length
+				var circles = svg.selectAll("circle")
+					.data(center)
+					.enter()
+					.append("circle")
+					.attr(
+						"transform",
+						function(d, i) {
+							return "translate(" + (xScale(d[0]) + svgConfig.left + circlePadding) 
+								+ "," 
+								+ (yScale(d[1]) + svgConfig.top) + ")"
+						}
+					)
+					.attr("r", circleRadiu)
+					.style({
+						"stroke": "none",
+						"fill": "rgba(0, 0, 0, 0)"
+					})
+					.transition()
+					.duration(800)
+					.style({
+						"stroke": "none",
+						"fill": "rgba(0, 0, 0, 1)"
+					})
+				//绘制折线
+				var line = d3.svg.line()
+					.x(function(d) {
+						return xScale(d[0]) + svgConfig.left + circlePadding
+					})
+					.y(function(d) {
+						return yScale(d[1]) + svgConfig.top
+					})
+				svg.append('path')
+					.attr("d",line(center))
+					.attr('stroke', 'rgba(0, 180, 0, 0)')
+					.attr('stroke-width', 2)
+					.attr('fill', 'none')
+					.transition()
+					.duration(800)
+					.delay(800)
+					.style({
+						"stroke": "rgba(0, 180, 0, 1)",
+					})
+				//添加x坐标轴
+				const xAxis = d3.svg.axis()
+					.scale(xScale)
+					.orient("bottom")
+				svg.append("g")
+					.attr("class", "axis xAxis")
+					.attr(
+						"transform",
+						"translate(" 
+						+ svgConfig.left 
+						+ "," 
+						+ (svgConfig.height - svgConfig.bottom) + ")"
+					)
+					.call(xAxis)
+				//添加y坐标轴
+				const yAxis = d3.svg.axis()
+					.scale(yScale)
+					.orient("left")
+				svg.append("g")
+					.attr("class", "axis yAxis")
+					.attr(
+						"transform",
+						"translate("
+						+ svgConfig.left
+						+ ","
+						+ svgConfig.top
+						+ ")"
+					)
+					.call(yAxis)
+				//添加箭头和path样式
+				svg.select(".xAxis")
+					.select("path")
+					.style({
+						"marker-end":"url(#xArrow)",
+						"fill": "none",
+						"stroke": "#000",
+						"stroke-width": "2px" 
+					})
+				svg.select(".yAxis")
+					.select("path")
+					.style({
+						"marker-start": "url(#yArrow)",
+						"fill": "none",
+						"stroke": "#000",
+						"stroke-width": "2px" 
+					})
+				//添加刻度线样式
+				svg.selectAll(".axis")
+					.selectAll("line")
+					.style({
+						"fill": "none",
+						"stroke": "#000",
+						"stroke-width": "2px"
+					})
+			})
+			
+			
+		</script>
+	</body>
+</html>

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+	</head>
+	<body>
+		<script src="../common/lib/d3.v3.min.js" type="text/javascript" charset="utf-8"></script>
+		<script type="text/javascript">
+		var width = 700
+		var height = 600
+		var padding = {
+			top: 30,
+			right: 30,
+			bottom: 30,
+			left: 30
+		}
+		
+		var dataset = (function() {
+			var arr = []
+			for(var i = 0; i < 30; i++) {
+			  var x = (10 * Math.random()).toFixed(2)
+			  var y = (10 * Math.random()).toFixed(2)
+			  arr.push([x, y])
+			}
+			return arr
+		})()
+		
+		var svg = d3.select('body')
+			.append('svg')
+			.attr('width', width)
+			.attr('height', height)
+			
+		var xScale = d3.scale.linear()
+			.domain([0, 10])
+			.range([padding.left, width - padding.right])
+	  
+		var yScale = d3.scale.linear()
+			.domain([0, 10])
+			.range([padding.top, height - padding.bottom])
+		
+		var circles = svg.selectAll('.circle')
+			.data(dataset)
+			.enter()
+			.append('circle')
+			.attr('class', 'circle')
+			.attr('cx', function(d) { return xScale(d[0]) })
+			.attr('cy', function(d) { return yScale(d[1]) })
+			.attr('r', 10)
+			.style('fill', '#000')
+			.style('stroke', 'none')
+		
+		
+			
+			
+			
+		var brush = d3.svg.brush()
+			.x(xScale)
+			.y(yScale)
+			.extent([[0, 0], [0, 0]])
+			.on('brush', brushed)
+			
+		function brushed() {
+			var extent = brush.extent()
+			var xmin = extent[0][0]
+			var ymin = extent[0][1]
+			var xmax = extent[1][0]
+			var ymax = extent[1][1]
+		  
+			circles.style('fill', function(d) {
+				if(d[0] >= xmin && d[0] <= xmax && d[1] >= ymin && d[1] <= ymax) {
+				  return '#f00'
+				}
+				return '#000'
+			})
+		}
+		svg.append('g')
+			.call(brush)
+			.selectAll('rect')
+			.style('fill-opacity', .3)
+	  </script>
+	</body>
+</html>

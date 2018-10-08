@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+	</head>
+	<body>
+		<script src="../common/lib/d3.v3.min.js" type="text/javascript" charset="utf-8"></script>
+		<script type="text/javascript">
+			// 正态分布生成100个数字并输出，170是平均值，10是标准差
+			var rand = d3.random.normal(170,10)
+			var dataset = []
+			for(var i = 0; i < 100; i++) {
+				dataset.push(rand())
+			}
+			console.log(dataset)
+			
+			var binNum = 10
+			var rangeMin = 140
+			var rangeMax = 200
+			
+			//创建一个直方图布局
+			var histogram = d3.layout.histogram()
+				// 数据分布范围
+				.range([rangeMin, rangeMax])
+				// bins的数量
+				.bins(binNum)
+				// 按照数量统计的方式
+				.frequency(true)
+			
+			// 转换数据
+			var hisData = histogram(dataset)
+			console.log(hisData)
+			
+			var xAxisWidth = 800
+			var xTicks = hisData.map(function(d){ return d.x })
+			
+			var xScale = d3.scale.ordinal()
+				.domain(xTicks)
+				.rangeRoundBands([0, xAxisWidth], 0.1)
+			
+			//宽高
+			var width = 800
+			var height = 500
+			// 外边框
+			var padding = {
+				top: 30,
+				right:30,
+				bottom:30,
+				left:30
+			}
+			// 添加svg元素
+			var svg = d3.select('body')
+				.append('svg')
+				.attr('height', height)
+				.attr('width', width)
+			
+			// 绘制x轴
+			var xAxis = d3.svg.axis()
+				.scale(xScale)
+				.orient('bottom')
+				.tickFormat(d3.format('.Of'))
+			
+			svg.append('g')
+				.attr('class', 'axis')
+				.attr('transform', 'translate(' + padding.left + ',' + (height - padding.bottom) + ')')
+				.call(xAxis)
+				.style('fill', 'none')
+				.style('stroke', '#000')
+				.selectAll('text')
+				.style('fill', '#000')
+				.style('stroke', 'none')
+			
+			// 添加y轴比例尺
+			var yAxisWidth = 450
+			var yScale = d3.scale.linear()
+				.domain([d3.min(hisData, function(d) { return d.y }), d3.max(hisData, function(d) { return d.y })])
+				.range([0, yAxisWidth])
+			// 绘制矩形
+			var gRect = svg.selectAll('rect')
+				.data(hisData)
+				.enter()
+				.append('rect')
+				.attr('class', 'rect')
+				.attr('x', function(d) { return xScale(d.x) + padding.left + (xScale.rangeBand() + d.dx) / 2 })
+				.attr('y', function(d){
+					return height - padding.bottom - yScale(d.y)
+				})
+				.attr('width', function(d) {
+					return xScale.rangeBand()
+				})
+				.attr('height', function(d) { return yScale(d.y) })
+				.style('fill', '#f00')
+				.style('stroke', '#000')
+				.text(function(d, i) {return i})
+			// 绘制曲线
+			var lineGenerator = d3.svg.line()
+				.x(function(d) {return xScale(d.x) + padding.left + (xScale.rangeBand() + d.dx) / 2 })
+				.y(function(d) {return (height - yScale(d.y)) })
+				.interpolate('basis')
+			var gLine = svg.append('g')
+				.attr('transform', 'translate(' + padding.left + ',' + (-padding.bottom) + ')')
+				.style('opacity', 1)
+			gLine.append('path')
+				.attr('class', 'linePath')
+				.attr('d', lineGenerator(hisData))
+				.style('fill', 'none')
+				.style('stroke', '#000')
+</script>
+	</body>
+</html>

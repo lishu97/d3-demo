@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+	</head>
+	<body>
+		<h1>尝试拖拽图形</h1>
+		<script src="../common/lib/d3.v3.min.js" type="text/javascript" charset="utf-8"></script>
+		<script type="text/javascript">
+			var svg = d3.select('body')
+				.append('svg')
+				.attr('height', 500)
+				.attr('width', 500)
+			var data = [
+				{
+					cx: 100,
+					cy: 250,
+					r: 50
+				},
+				{
+					cx: 400,
+					cy: 250,
+					r: 50
+				}
+			]
+			var drag = d3.behavior.drag()
+				.origin(function(d, i){
+					return {x: d.cx, y: d.cy}
+				})
+				.on('dragstart', function(d) {
+					console.log('拖拽开始')
+				})
+				.on('dragend', function(d) {
+					console.log('拖拽结束')
+				})
+				.on('drag', function(d) {
+					d3.select(this)
+						.attr('cx', d.cx = d3.event.x)
+						.attr('cy', d.cy = d3.event.y)
+				})
+			
+			var circle = svg.selectAll('circle')
+				.data(data)
+				.enter()
+				.append('circle')
+				.attr('cx', function(d) {
+					return d.cx
+				})
+				.attr('cy', function(d) {
+					return d.cy
+				})
+				.attr('r', function(d) {
+					return d.r
+				})
+				.attr('fill', 'red')
+				.call(drag)
+		</script>
+	</body>
+</html>

@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+	</head>
+	<body>
+	  <script src="../common/lib/d3.v3.min.js" type="text/javascript" charset="utf-8"></script>
+	  <script src="./resource/topojson.js" type="text/javascript" charset="utf-8"></script>
+	  <script type="text/javascript">
+	    var height = 600
+	    var width = 800
+	    var svgNum = [0, 1, 2, 3]
+	    var svg = d3.select('body')
+	      .selectAll('svg')
+	      .data(svgNum)
+	      .enter()
+	      .append('svg')
+	      .attr('id', (d, i) => 'svg' + d)
+	      .attr('height', height)
+	      .attr('width', width)
+	    
+	    // 定义地图投影
+      var projection = d3.geo.mercator() 
+        .center([107, 31])
+        .scale(600)
+        .translate([width / 2, height * 2 / 3])
+        
+      // 路径生成器
+      var path = d3.geo.path()
+        .projection(projection)
+        
+      // 颜色比例尺
+      var color = d3.scale.category20()
+      
+      geojson(d3.select('#svg0'))
+      
+      /* 使用geojson文件绘制中国地图 */
+      function geojson(svg) {
+        // 请求china.geojson文件
+        d3.json('./resource/china.geojson', function(error, root) {
+          if(error) {
+            return console.error(error)
+          }
+          // 读取到的信息保存在root里
+          console.log(root) 
+          
+          var groups = svg.append('g')
+          
+          groups.selectAll('path')
+            .data(root.features)
+            .enter()
+            .append('path')
+            .attr('class', 'province')
+            .style('fill', (d, i) => {
+              return color(i)
+            })
+            .attr('d', path)
+            
+          // 请求southchinasea.svg
+          d3.xml('./resource/southchinasea.svg', function(error, xmlDocument) {
+            var southchinasea = svg.append('g')
+              .attr('id', 'southchinasea')
+              .html(xmlDocument.getElementsByTagName('svg')[0].innerHTML)
+            svg.html(function() {
+              return d3.select(this).html() + southchinasea.outerHTML
+            })
+            d3.select('#southchinasea')
+              .attr('transform', 'translate(570, 440) scale(.08)')
+          })
+        })
+      }
+      
+      // 请求china.topojson文件
+      d3.json('./resource/china.topojson', function(error, toporoot) {
+        if(error) {
+          return console.error(error)
+        }
+        displayNormally(d3.select('#svg1'))
+        displayMerge(d3.select('#svg2'))
+        displayBoundary(d3.select('#svg2'))
+        displayNeighbors(d3.select('#svg3'))
+        
+        /* 正常显示地图信息 */
+        function displayNormally(svg) {
+          // 将topojson对象转换成geojson，保存在georoot中
+          var georoot = topojson.feature(toporoot, toporoot.objects.china)
+          
+          // 添加g元素做各省容器
+          var groups = svg.append('g')
+          
+          // 绘制各省
+          groups.selectAll('path')
+            .data(georoot.features)
+            .enter()
+            .append('path')
+            .attr('class', 'province')
+            .style('fill', (d, i) => color(i))
+            .attr('d', path)
+          
+          // 添加南海诸岛
+          d3.xml('./resource/southchinasea.svg', function(error, doc) {
+            if(error){
+              return console.error(error)
+            }
+            // 容器及内容
+            var southchinasea = svg.append('g')
+              .attr('id', 'southchinasea')
+              .html(doc.getElementsByTagName('svg')[0].innerHTML)
+              .attr('transform', 'translate(570, 440) scale(.08)')
+            
+          })
+        }
+        
+        /* 合并地区显示 */
+        function displayMerge(svg) {
+          // 将topojson对象转换成geojson，保存在georoot中
+          var georoot = topojson.feature(toporoot, toporoot.objects.china)
+          
+          // 添加g元素做各省容器
+          var groups = svg.append('g')
+          var chuanyu = d3.set(['Sichuan', 'Chongqing'])
+        
+          // 用topojson.merge方法合并川渝形状
+          var mergedPolygon = topojson.merge(
+            toporoot, 
+            toporoot.objects.china.geometries.filter((d) => {
+              return chuanyu.has(d.properties.name)
+              })
+          )
+          
+          // 显示合并后的结构MultiPolygon
+          console.log('合并后的路径')
+          console.log(mergedPolygon)
+          
+          // 绘制除了川渝之外的各省的地图，颜色为灰色
+          groups.selectAll('path')
+            .data(georoot.features.filter((d) => !chuanyu.has(d.properties.name)))
+            .enter()
+            .append('path')
+            .attr('class', 'province')
+            .style('fill', '#ccc')
+            .attr('d', path)
+          
+          // 绘制川渝两地，颜色为红色
+          groups.append('path')
+            .datum(mergedPolygon)
+            .attr('class', 'provinde')
+            .style('fill', '#f00')
+            .attr('d', path)
+          
+          // 添加南海诸岛
+//        d3.xml('southchinasea.svg', function(error, doc) {
+//          if(error){
+//            return console.error(error)
+//          }
+//          // 容器及内容
+//          var southchinasea = svg.append('g')
+//            .attr('id', 'southchinasea')
+//            .html(doc.getElementsByTagName('svg')[0].innerHTML)
+//            .attr('transform', 'translate(570, 440) scale(.08)')
+//        })
+        }
+        
+        /* 添加重庆、四川边界线 */
+        function displayBoundary(svg) {
+          // 调用topojson.mesh方法获得边界线路径
+          var boundary = topojson.mesh(
+            toporoot, 
+            toporoot.objects.china,
+            (a, b) => a.properties.name === 'Chongqing' && b.properties.name === 'Sichuan'
+          )
+          // 根据路径绘制元素
+          svg.append('path')
+            .datum(boundary)
+            .attr('class', 'boundary')
+            .attr('d', path)
+            .style('fill', 'none')
+            .style('stroke', '#ccc')
+            .style('stroke-width', '1px')
+        }
+        
+        /* 显示鼠标所指省份及相邻省份 */
+        function displayNeighbors (svg) {
+        	// 将topojson对象转换成geojson，保存在georoot中
+          var georoot = topojson.feature(toporoot, toporoot.objects.china)
+          
+          // 添加g元素做各省容器
+          var groups = svg.append('g')
+          
+          var neighbors = topojson.neighbors(toporoot.objects.china.geometries)
+        
+          // neighbors数组保存有 各省份的相邻省份序号
+          console.log('各省份的相邻省份序号')
+          console.log(neighbors)
+          
+          var paths = groups.selectAll('path')
+            .data(georoot.features)
+            .enter()
+            .append('path')
+            .attr('class', 'province')
+            .style('fill', '#ccc')
+            .attr('d', path)
+            
+          // 为每一个元素添加相邻省份的选择集
+          paths.each(function(d, i) {
+            d.neighbors = d3.selectAll(
+              neighbors[i].map(function(j){
+                return paths[0][j]
+              })
+            )
+          })
+          
+          // 鼠标移入后，变色
+          .on('mouseover',function(d, i) {
+            d3.select(this).transition()
+              .style('fill', '#f00')
+            d.neighbors.transition()
+            .style('fill', '#f99')
+          })
+          // 鼠标移出后，变回原来的颜色
+          .on('mouseout', function(d, i) {
+            d3.select(this).transition()
+            .style('fill', '#ccc')
+            d.neighbors.transition()
+            .style('fill', '#ccc')
+          })
+        }
+      })
+	  </script>
+	</body>
+</html>

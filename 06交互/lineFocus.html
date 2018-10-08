@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+		<style type="text/css">
+			.overlay {
+				/*  auto：与pointer-events属性未指定时的表现效果相同。在svg内容上与visiblepainted值相同
+					none：元素永远不会成为鼠标事件的target。但是，当其后代元素的pointer-events属性指定其他值时，鼠标事件可以指向后代元素，在这种情况下，鼠标事件将在捕获或冒泡阶触发父元素的事件侦听器。
+					其他值：只能应用在SVG上。*/
+				pointer-events: all;
+			}
+		</style>
+	</head>
+		<body>
+			<script src="../common/lib/d3.v3.min.js" type="text/javascript" charset="utf-8"></script>
+			<script type="text/javascript">
+				var dataset = [
+					{
+						country: 'china',
+						gdp: [],
+					},
+					{
+						country: 'american',
+					gdp: [],
+					}
+				]
+				for(var i = 2000, basis = 100000, add = 30000; i < 2014; i++){
+					basis += Number((add * Math.random()).toFixed(0))
+					var item = [i, basis]
+					dataset[0].gdp.push(item)
+			       // item = [i, item[1] + Number((add * (Math.random() - 0.5)).toFixed(0))]
+			       // dataset[1].gdp.push(item)
+				}
+				var width = 700
+				var height = 600
+				var padding = {
+					top: 50,
+					right: 50,
+					bottom: 50,
+					left: 80
+				}
+				var svg = d3.select('body')
+					.append('svg')
+					.attr('height', height)
+					.attr('width', width)
+				// 计算GDP最大值
+				var gdpmax = 0
+				for(var i = 0, len = dataset.length; i < len; i++) {
+					var currGdp = d3.max(dataset[i].gdp, function(d) { return d[1] })
+					if(currGdp > gdpmax) {
+						gdpmax = currGdp
+					}
+				}
+				var xScale = d3.scale.linear()
+					.domain([2000, 2013])
+					.range([0, width - padding.left - padding.right])
+				var yScale = d3.scale.linear()
+					.domain([100000, gdpmax * 1.1])
+					.range([height - padding.top - padding.bottom, 0])
+				
+				var linePath = d3.svg.line()
+					.x(function(d) { return xScale(d[0]) })
+					.y(function(d) { return yScale(d[1]) })
+					// 曲线有2种：basis/cardinal，前者不过线段端点，折线图应用后者
+					.interpolate('cardinal')
+				
+				var colors = [d3.rgb(0, 0, 255), d3.rgb(0, 255, 0)]
+				
+				svg.selectAll('paht')
+					.data(dataset)
+					.enter()
+					.append('path')
+					.attr('transform', 'translate(' + padding.left + ',' + padding.top + ')')
+					.attr('d', function(d) { return linePath(d.gdp) })
+					.attr('fill', 'none')
+					.attr('stroke-width', 3)
+					.attr('stroke', function(d, i) { return colors[i] })
+				
+				// x轴
+				var xAxis = d3.svg.axis()
+					.scale(xScale)
+					.ticks(13)
+					// 表示用字符串格式，年份中的逗号会被去掉
+					.tickFormat(d3.format('d'))
+					.orient('bottom')
+				// y轴
+				var yAxis = d3.svg.axis()
+					.scale(yScale)
+					.orient('left')
+
+				svg.append('g')
+					.attr('class', 'axis')
+					.attr('transform', 'translate(' + padding.left + ',' + (height - padding.bottom) + ')')
+					.call(xAxis)
+					.style('fill', 'none')
+					.style('stroke', '#000')
+				svg.append('g')
+					.attr('class', 'axis')
+					.attr('transform', 'translate(' + padding.left + ',' + padding.top + ')')
+					.call(yAxis)
+					.style('fill', 'none')
+					.style('stroke', '#000')
+				
+				/* 折线图的焦点交互 */
+				svg.append('rect')
+					.attr('class', 'overlay')
+					.attr('x', padding.left)
+					.attr('y', padding.top)
+					.attr('width', width - padding.left - padding.right)
+					.attr('height', height - padding.top - padding.bottom)
+					.attr('fill', 'none')
+					.on('mouseover', function() {
+						focusCircle.style('display', null)
+						focusLine.style('display', null)
+					})
+					.on('mousemove', mousemove)
+					.on('mouseout', function() {
+						focusCircle.style('display', 'none')
+						focusLine.style('display', 'none')
+					})
+				
+				// 焦点元素
+				var focusCircle = svg.append('g')
+					.attr('class', 'focusCircle')
+					.style('display','none')
+				focusCircle.append('circle')
+					.attr('r', 4.5)
+				focusCircle.append('text')
+					.attr('dx', 10)
+					.attr('dy', '1em')
+					
+				// 对齐线的元素
+				var focusLine = svg.append('g')
+					.attr('class', 'focusLine')
+					.style('display', 'none')
+				
+				var vLine = focusLine.append('line')
+				var hLine = focusLine.append('line')
+				
+				/* 当鼠标在透明矩形内滑动时调用 */
+				function mousemove() {
+					// 折线的源数组
+					var data = dataset[0].gdp
+					
+					// 获取鼠标相对于透明矩形左上角的坐标，左上角坐标为（0，0）
+					var mouseX = d3.mouse(this)[0] - padding.left
+					var mouseY = d3.mouse(this)[1] - padding.top
+					
+					// 通过比例尺的反函数计算元数据中的值，例如x0为某个年份，y0为GDP值
+					var x0 = xScale.invert(mouseX)
+					var y0 = yScale.invert(mouseY)
+					
+					// 对x0四舍五入
+					x0 = Math.round(x0)
+					
+					// 查找原数组中x0的值，并返回索引号
+					var bisect = d3.bisector(function(d) { return d[0] }).left
+					var index = bisect(data, x0)
+					
+					// 从数据中获取年份和GDP值
+					var x1 = data[index][0]
+					var y1 = data[index][1]
+					
+					// 分别用x轴和y轴的比例尺，计算焦点的位置
+					var focusX = xScale(x1) + padding.left
+					var focusY = yScale(y1) + padding.top
+					
+					// 通过平移，使焦点移动到指定位置
+					focusCircle.attr('transform', 'translate(' + focusX + ',' + focusY + ')')
+					// 设定焦点的文字信息
+					focusCircle.select('text')
+						.text(x1 + '年的GDP：' + y1 + '亿美元')
+					
+					// 设定垂直对齐线的起点和终点
+					vLine.attr('x1', focusX)
+						.attr('y1', focusY)
+						.attr('x2', focusX)
+						.attr('y2', height - padding.bottom)
+						.style('stroke', '#000')
+						.style('stroke-dasharray', [3, 2])
+					
+					// 设定水平对齐线的起点和终点
+					hLine.attr('x1', focusX)
+						.attr('y1', focusY)
+						.attr('x2', padding.left)
+						.attr('y2', focusY)
+						.style('stroke', '#000')
+						.style('stroke-dasharray', [3, 2])
+				}
+			</script>
+		</body>
+</html>

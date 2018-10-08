@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title></title>
+  </head>
+  <body>
+    <script src="../../common/lib/d3.v3.min.js" type="text/javascript" charset="utf-8"></script>
+    <script src="../resource/topojson.js" type="text/javascript" charset="utf-8"></script>
+    <script type="text/javascript">
+      // svg
+      const height = 600
+      const width = 700
+      const svg = d3.select('body')
+          .append('svg')
+          .attr('height', height)
+          .attr('width', width)
+      
+      const color = d3.scale.category20()
+      
+      const defs = svg.append('defs')
+      const gaussian = defs.append('filter')
+          .attr('id', 'gaussian')
+      gaussian.append('feGaussianBlur')
+          .attr('in', 'SourceGraphic')
+          .attr('stdDeviation', '1')
+          
+      // 所有省份绘制的容器
+      let provinces = svg.append('g')
+      drawPath()
+      
+      /* 绘制各省 */
+      function drawPath() {
+        // 投影
+        const projection = d3.geo.mercator()
+            .center([107, 31])
+            .scale(600)
+            .translate([width / 2, height * 2 / 3])
+        
+        // 路径生成器
+        const path = d3.geo.path()
+            .projection(projection)
+            
+        d3.json('../resource/china.topojson', function(error, toporoot) {
+          if(error) {
+            return console.error(error)
+          }
+          // 格式转换：topojson => geojson
+          const georoot = topojson.feature(toporoot, toporoot.objects.china)
+          // 添加数据残缺字段
+          georoot.features[1].properties.name_local = '青海'
+          // 绘制各省路径
+          provinces.selectAll('path')
+              .data(georoot.features)
+              .enter()
+              .append('path')
+              .attr('class', 'province')
+              .attr('d', path)
+              .style('fill', '#007')
+              .style('stroke', '#fff')
+//            .style('stroke-width', 2)
+        })
+        light()
+      }
+      
+      /* 标注 */
+      function mark() {
+        const projection = d3.geo.mercator()
+            .center([107, 31])
+            .scale(600)
+            .translate([width / 2, height * 2 / 3])
+        
+        const path = d3.geo.path()
+            .projection(projection)
+            
+        const peking = [116.3, 39.9]
+        const proPeking = projection(peking)
+        
+        svg.append('circle')
+            .attr('class', 'point')
+            .attr('cx', proPeking[0])
+            .attr('cy', proPeking[1])
+            .attr('r', 3)
+            .style('fill', '#000')
+      }
+      /* 夜光图 */
+      function light() {
+        const a = d3.rgb(255, 255, 255)
+        const b = d3.rgb(255, 255, 0)
+        const computeColor = d3.interpolate(a, b)
+        
+        const projection = d3.geo.mercator()
+            .center([107, 31])
+            .scale(600)
+            .translate([width / 2, height * 2 / 3])
+            
+        d3.json('../resource/cities.json', function(error, chinadata) {
+          if(error) {
+            return console.error(error)
+          }
+          let dataset = []
+          console.log(chinadata)
+          map(chinadata.provinces, dataset)
+          console.log(dataset)
+          
+          let points = svg.selectAll('.point')
+              .data(dataset)
+              .enter()
+              .append('circle')
+              .attr('class', 'point')
+              .attr('cx', (d) => {
+                return projection([d.log, d.lat])[0]
+              })
+              .attr('cy', (d) => {
+                return projection([d.log, d.lat])[1]
+              })
+              .attr('r', 2.5)
+              .style('fill', function(d) {
+                const color = computeColor(Math.random())
+                return color.toString()
+              })
+              .style('filter', 'url(#' + gaussian.attr('id') + ')')
+        })
+        /* 递归函数：深度优先遍历所有地区的经纬度及地名 */
+        function map(data, arr) {
+          data.map(function(d, i) {
+            const lat = d.lat
+            const log = d.log
+            const name = d.name
+            
+            arr.push({
+              lat: lat,
+              log: log,
+              name: name
+            })
+            
+            if(d.children) {
+              map(d.children, arr)
+            }
+          })
+        }
+     }
+    </script>
+  </body>
+</html>

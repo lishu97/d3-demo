@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+	</head>
+	<body>
+		<script src="../../common/lib/d3.v3.min.js" type="text/javascript" charset="utf-8"></script>
+		<script src="../resource/topojson.js" type="text/javascript" charset="utf-8"></script>
+		<script type="text/javascript">
+			const height = 600
+			const width = 700
+			const svg = d3.select('body')
+				.append('svg')
+				.attr('width', width)
+				.attr('height', height)
+			
+			const color = d3.scale.category20()
+			
+			const defs = svg.append('defs')
+			const arrowMarker = defs.append('marker')
+					.attr('id', 'arrow')
+					.attr('markerUnits', 'strokeWidth')
+					.attr('markerWidth', '12')
+					.attr('markerHeight', '12')
+					.attr('viewBox', '0 0 12 12')
+					.attr('refX', '6')
+					.attr('refY', '6')
+					.attr('orient', 'auto')
+			const arrow_path = 'M2,2 L10,6 L2,10 L6,6 L2,2'
+			arrowMarker.append('path')
+					.attr('d', arrow_path)
+					.attr('fill', '#000')
+			const startMarker = defs.append('marker')
+					.attr('id', 'startMarker')
+					.attr('markerUnits', 'strokeWidth')
+					.attr('markerWidth', '12')
+					.attr('markerHeight', '12')
+					.attr('viewBox', '0 0 12 12')
+					.attr('refX', '6')
+					.attr('refY', '6')
+					.attr('orient', 'auto')
+			startMarker.append('circle')
+					.attr('cx', '6')
+					.attr('cy', '6')
+					.attr('r', '2')
+					.attr('fill', '#000')
+					
+			// TODO:使用transform而非重绘，可大幅提高效率
+			const projection = d3.geo.orthographic()
+				.scale(130)
+				.translate([width / 2, height / 2])
+				.rotate([170, -15, -15])
+				.clipAngle(90)
+			
+			const path = d3.geo.path()
+				.projection(projection)
+			
+			d3.json('../resource/world.topojson', function(error, toporoot) {
+				
+				if(error){
+					return console.error(error) 
+				}
+				
+				const georoot = topojson.feature(toporoot, toporoot.objects.ne_10m_admin_0_countries)
+				
+				const graticule = d3.geo.graticule()
+					.extent([[-180, -90], [180, 90]])
+					.step([10, 10])
+				
+				const grid = graticule()
+				
+				paint()
+				drawPath()
+
+				// 自动旋转
+				function rotate() {
+					const arr = projection.rotate()
+					arr[0] += 1
+					projection.rotate(arr)
+					svg.html('')
+					paint()
+					drawPath()
+				}
+				const interval = 40
+				let rotateInterval = setInterval(rotate, interval)
+				
+				function paint() {
+					svg.append('path')
+						.datum(grid)
+						.attr('class', 'grid')
+						.attr('d', path)
+						.style('stroke', '#ccc')
+						.style('fill', 'none')
+					
+					svg.selectAll('.country')
+						.data(georoot.features)
+						.enter()
+						.append('path')
+						.attr('class', 'country')
+						.attr('d', path)
+						.style('stroke', 'none')
+						.style('fill', (d, i) => color(i))
+						.on('mouseover', function() {
+							rotateInterval && clearInterval(rotateInterval)
+							d3.select(this)
+								.style('fill', (d, i) => {
+									let colored = d3.rgb(d3.select(this).style('fill'))
+									colored.r += 10
+									colored.g += 10
+									colored.b += 10
+									return colored
+								})
+						})
+						.on('mouseout', function() {
+							rotateInterval = setInterval(rotate, interval)
+							d3.select(this)
+								.style('fill', (d, i) => {
+									let colored = d3.rgb(d3.select(this).style('fill'))
+									colored.r -= 10
+									colored.g -= 10
+									colored.b -= 10
+									return colored
+								})
+						})
+				}
+			})
+			function drawPath() {
+				const pekingToWashington = {
+					type: 'LineString',
+					coordinates: [[116.4, 39.9], [146.4, 39.7], [176.4, 39.5], [-150.4, 39.3], [-110.4, 39.1], [-77.0, 38.9]]
+				}
+				
+				svg.append('path')
+						.attr('class', 'route')
+						.attr('d', path(pekingToWashington))
+						.attr('marker-end', 'url(#arrow)')
+						.attr('marker-start', 'url(#startMarker)')
+						.style('stroke', '#000')
+						.style('fill', 'none')
+			}
+		</script>
+	</body>
+</html>

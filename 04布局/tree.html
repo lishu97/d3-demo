@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+	</head>
+	<body>
+		<script src="../common/lib/jquery.min.js" type="text/javascript" charset="utf-8"></script>
+		<script src="../common/lib/d3.v3.min.js" type="text/javascript" charset="utf-8"></script>
+		<script src="./tree.js" type="text/javascript" charset="utf-8"></script>
+		<script type="text/javascript">
+			var height = 500
+			var width = 500
+			var svg = d3.select('body')
+				.append('svg')
+				.attr('height', height)
+				.attr('width', width)
+			// 创建树图布局
+			var tree = d3.layout.tree()
+				.size([width, height - 200])
+				.separation(function(a, b) {
+					return (a.parent == b.parent ? 1 : 2)
+				})
+			// 添加树图g元素
+			var gTree = svg.append('g')
+				.attr('transform', function() {
+					return 'translate(' + width / 4 + ',0)'
+				})
+			// 创建一个对角线生成器，并设定其投影。树图布局默认树是由上到下逐渐展开的，现在需要将其绘制成从左到右
+			var diagonal = d3.svg.diagonal()
+				// projection作用于每一个节点，调换其x和y的坐标，制成一个横向的树图
+				.projection(function(d){ return [d.y, d.x] })
+
+
+			var nodes = tree.nodes(root)
+			var links = tree.links(nodes)
+			
+			console.log(nodes)
+			console.log(links)
+			
+			// 绘制连线
+			var link = gTree.selectAll('.link')
+				.data(links)
+				.enter()
+				.append('path')
+				.attr('class', 'link')
+				.attr('d', diagonal)
+				.style('fill', 'none')
+				.style('stroke', '#000')
+			// 为添加节点做准备
+			var node = gTree.selectAll('.node')
+				.data(nodes)
+				.enter()
+				.append('g')
+				.attr('class', 'node')
+				.attr('transform', function(d) {
+					// 保持与对角线生成器的投影函数一致，生成向右展开的树
+					return 'translate(' + d.y + ',' + d.x + ')'
+				})
+			node.append('circle')
+				.attr('r', 4.5)
+				.style('fill', '#fff')
+				.style('stroke', '#000')
+			node.append('text')
+				.attr('dx', function(d) { return (d.children ? -8 : 8) })
+				.attr('dy', 3)
+				.style('text-anchor', function(d) {
+					return d.children ? 'end' : 'start'
+				})
+				.text(function(d) {
+					return d.name
+				})
+		</script>
+	</body>
+</html>

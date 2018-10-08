@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="utf-8" />
+		<title></title>
+		<style type="text/css">
+			html,
+			body {
+				height: 100%;
+				width: 100%;
+				padding: 0;
+				margin: 0;
+			}
+		</style>
+	</head>
+
+	<body>
+		<svg>
+			<defs>
+				<marker id="xArrow" markerWidth="14" markerHeight="20" refx="3" refy="12">
+					<path d="M2,6 L2,12 L10,9 Z" fill="#000" />
+				</marker>
+				<marker id="yArrow" markerWidth="14" markerHeight="20" refx="0" refy="7">
+					<path d="M0,8 L3,0 L6,8 Z" fill="#000" />
+				</marker>
+			</defs>
+		</svg>
+		<script src="../common/lib/jquery.min.js" type="text/javascript" charset="utf-8"></script>
+		<script src="../common/lib/d3.v3.min.js" type="text/javascript" charset="utf-8"></script>
+		<script src="../common/lib/mock.js" type="text/javascript" charset="utf-8"></script>
+		<script src="../common/js/mockdata.js" type="text/javascript" charset="utf-8"></script>
+		<script type="text/javascript">
+			//定义svg相关属性
+			var height = 600
+			var width = 800
+			var padding = {
+				left: 30,
+				right: 30,
+				top: 30,
+				bottom: 30
+			}
+
+			//加入svg元素
+			var svg = d3.select("body")
+				.select("svg")
+				.attr("height", height)
+				.attr("width", width)
+
+			//数据集
+			var dataset = [];
+			$.getJSON("http://127.0.0.1:8080", function(data) {
+				dataset = data.result
+			}).then(function() {
+				//定义比例尺
+				var xScale = d3.scale.ordinal()
+					.domain(d3.range(dataset.length))
+					.rangeRoundBands([0, width - padding.left - padding.right])
+				var yScale = d3.scale.linear()
+					.domain([0, d3.max(dataset)])
+					.range([height - padding.top - padding.bottom, 0])
+				//定义坐标轴
+				var xAxis = d3.svg.axis()
+					.scale(xScale)
+					.orient("bottom")
+				var yAxis = d3.svg.axis()
+					.scale(yScale)
+					.orient("left")
+				//矩形区域之间的空白
+				var rectPadding = 40
+				//矩形宽度
+				var rectWidth = (width - padding.left - padding.right -
+						(dataset.length - 1) * rectPadding) / dataset.length
+
+				//添加矩形与数值的组合
+				var gs = svg.selectAll(".rectAndText")
+					.data(dataset)
+					.enter()
+					.append("g")
+					.attr("class", "rectAndText")
+					.attr(
+						"transform",
+						function(d, i) {
+							return "translate(" + (xScale(i) + padding.left + rectPadding / 2) + "," + padding.top + ")"
+						}
+					)
+				//添加矩形
+				var rects = gs.append("rect")
+					.attr(
+						"y",
+						function(d) {
+							return height - padding.top - padding.bottom
+						}
+					)
+					.attr("width", rectWidth)
+					.attr("height", 0)
+					.attr("fill", "#f00")
+					.transition()
+					.duration(1200)
+					//				.ease("elastic")
+					//				.delay(1000)
+					.attr(
+						"y",
+						function(d) {
+							return yScale(d)
+						}
+					)
+					.attr(
+						"height",
+						function(d) {
+							return height - padding.top - padding.bottom - yScale(d)
+						}
+					)
+
+				//添加数值
+				var texts = gs.append("text")
+					.attr(
+						"y",
+						function(d) {
+							return yScale(d) - 10
+						}
+					)
+					.attr("x", rectWidth / 2)
+					.text(
+						function(d) {
+							return d
+						}
+					)
+					.attr("text-anchor", "middle")
+					.style({
+						"font-weight": "900",
+						"font": "18px/22px 'Microsoft YaHei'",
+						"fill": "rgba(33, 33, 33, 0)"
+					})
+					.transition()
+					.duration(1200)
+					.delay(800)
+					.style({
+						'fill': 'rgba(33, 33, 33, 1)'
+					})
+
+				//添加坐标轴
+				svg.append("g")
+					.attr("class", "yAxis axis")
+					.attr("transform", "translate(" + padding.left + "," + padding.top + ")")
+					.call(yAxis)
+				svg.append("g")
+					.attr("class", "xAxis axis")
+					.attr("transform", "translate(" + padding.left + "," + (height - padding.bottom) + ")")
+					.call(xAxis)
+				//坐标轴:刻度
+				d3.selectAll(".axis")
+					.selectAll("line")
+					.style({
+						"stroke": "#000",
+						"stroke-width": "2px",
+					})
+				//坐标轴：文本
+				d3.selectAll(".axis")
+					.selectAll("text")
+					.style({
+						"fill": "#000",
+					})
+				//坐标轴：轴线
+				d3.selectAll(".axis")
+					.selectAll("path")
+					.style({
+						"fill": "none",
+						"stroke": "#000",
+						"stroke-width": "2px",
+					})
+				//坐标轴添加箭头
+				d3.selectAll(".xAxis")
+					.select("path")
+					.style({
+						"marker-end": "url(#xArrow)"
+					})
+				d3.selectAll(".yAxis")
+					.select("path")
+					.style({
+						"marker-start": "url(#yArrow)"
+					})
+			})
+		</script>
+	</body>
+
+</html>

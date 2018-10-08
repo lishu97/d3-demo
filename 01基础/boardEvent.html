@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+	</head>
+
+	<body>
+	<h1>尝试按下下列按键</h1>
+		<script src="../common/lib/d3.v3.min.js" type="text/javascript" charset="utf-8"></script>
+		<script type="text/javascript">
+			var svg = d3.select('body')
+				.append('svg')
+				.attr('height', 500)
+				.attr('width', 500)
+			var data = [
+				{
+					x: 0,
+					y: 100,
+					height: 40,
+					width: 40,
+					key: 'a'
+				},
+				{
+					x: 50,
+					y: 100,
+					height: 40,
+					width: 40,
+					key: 's'
+				},
+				{
+					x: 100,
+					y: 100,
+					height: 40,
+					width: 40,
+					key: 'd'
+				},
+				{
+					x: 150,
+					y: 100,
+					height: 40,
+					width: 40,
+					key: 'f'
+				}
+			]
+			var rects = svg.selectAll('rect')
+				.data(data)
+				.enter()
+				.append('rect')
+				.attr('x', function(d) {
+					return d.x
+				})
+				.attr('y', function(d) {
+					return d.y
+				})
+				.attr('height', function(d) {
+					return d.height
+				})
+				.attr('width', function(d) {
+					return d.width
+				})
+				.attr('fill', '#000')
+
+			var text = svg.selectAll('text')
+				.data(data)
+				.enter()
+				.append('text')
+				.attr('x', function(d) {
+					return d.x
+				})
+				.attr('y', function(d) {
+					return d.y
+				})
+				.attr('dx', 20)
+				.attr('dy', 25)
+				.attr('text-anchor', 'middle')
+				.attr('fill', '#fff')
+				.text(function(d) {
+					return d.key
+				})
+			d3.select('body')
+				.on('keydown', function() {
+					rects.attr('fill', function(d) {
+						if(d.key.toUpperCase() === String.fromCharCode(d3.event.keyCode)) {
+							return 'red'
+						}
+						return 'black'
+					})
+				})
+				.on('keyup', function() {
+					rects.attr('fill', 'black')
+				})
+		</script>
+	</body>
+
+</html>

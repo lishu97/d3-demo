@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+		<style type="text/css">
+			.tooltip{
+				position: absolute;
+				width: 120px;
+				height: auto;
+				font-family: simsun;
+				font-size: 14px;
+				text-align: center;
+				color: #fff;
+				border: 2px solid #000;
+				background-color: #000;
+				border-radius: 8px;
+			}
+			.tooltip::after{
+				content: '';
+				position: absolute;
+				bottom: 100%;
+				left: 20%;
+				margin-left: -8px;
+				width: 0;
+				height: 0;
+				border-bottom: 12px solid #000;
+				border-right: 12px solid transparent;
+				border-left: 12px solid transparent;
+			}
+		</style>
+	</head>
+	<body>
+		<script src="../common/lib/d3.v3.min.js" type="text/javascript" charset="utf-8"></script>
+		<script type="text/javascript">
+			var height = 600
+			var width = 700
+			var svg = d3.select('body')
+				.append('svg')
+				.attr('width', width)
+				.attr('height', height)
+				
+			// 1.确定初始数据  
+			var dataset = [
+				['小米', 60.8], 
+				['三星', 58.3], 
+				['联想', 47.3], 
+				['苹果', 46.7], 
+				['华为', 60.9], 
+				['酷派', 40.1], 
+				['其他', 111.5]
+			]
+			
+			// 2.用布局完成数据转换
+			var pie = d3.layout.pie()
+				.value(function(d) { return d[1] })
+										
+			var piedata = pie(dataset)
+			
+			console.log(piedata)
+			
+			// 3.绘制
+			// 字体大小
+			var fontsize = 14
+			
+			// 内外半径
+			var innerRadius = 0
+			var outerRadius = height / 3
+			
+			// 饼状图的圆的圆心和半径
+			var pieCircle = {
+				cx: width / 2,
+				cy: height / 2,
+				r: outerRadius
+			}
+			
+			// 颜色比例尺
+			var color = d3.scale.category10()
+			
+			// 创建弧生成器
+			var arc = d3.svg.arc()
+				.innerRadius(innerRadius)
+				.outerRadius(outerRadius)
+			
+			redraw()
+			
+			function redraw() {
+				// 获取update部分
+				var arcsUpdate = svg.selectAll('.arcGroup')
+					.data(piedata, function(d) {
+						return d.data[0]
+					})
+				// 获取enter部分
+				var arcsEnter = arcsUpdate.enter()
+				// 获取exit部分
+				var arcsExit = arcsUpdate.exit()
+				
+				// 1.update部分处理方法
+				arcsUpdate.call(setAttributes)
+				
+				// 2.enter部分处理办法
+				var newArcs = arcsEnter.append('g')
+					.attr('class', 'arcGroup')
+				// 添加弧
+				newArcs.append('path')
+				 	.attr('class', 'arcPath')
+				// 添加弧内文字
+				newArcs.append('text')
+				 	.attr('class', 'percent')
+				// 添加弧外文字
+				newArcs.append('text')
+				 	.attr('class', 'company')
+				// 添加连接文字的直线1
+				newArcs.append('line')
+				 	.attr('class', 'conLine1')
+				// 添加连接文字的直线2
+				newArcs.append('line')
+				 	.attr('class', 'conLine2')
+				newArcs.call(setAttributes)
+				
+				// 3.exit部分处理办法
+				arcsExit.remove()
+			}
+			// 设置弧的属性
+			function setAttributes(arcs) {
+				/*
+										为每一段弧添加3个数据
+				 * circle - 饼状图所在的圆，其中包含cx、cy、r三个属性 
+				 * dx - x方向的相对偏移量，拖拽事件触发时使用
+				 * dy - y方向的相对偏移量，拖拽事件触发时使用
+				 * */
+				arcs.each(function(d) {
+					d.circle = pieCircle,
+					d.dx = 0,
+					d.dy = 0
+				})
+				// 
+				arcs.attr('transform', function(d) {
+					return 'translate(' + d.circle.cx + ',' + d.circle.cy + ')'
+				})
+				
+				// 绘制弧
+				arcs.select('.arcPath')
+					.attr('d', function(d) { return arc(d) })
+					.style('fill', function(d) {
+						return color(d.data[0])
+					})
+						
+				
+				// 提前计算各公司总值
+				var sum = d3.sum(dataset, function(d) { return d[1] })
+				// 绘制弧内百分比
+				arcs.select('.percent')
+					.attr('transform', function(d) {
+						var x = arc.centroid(d)[0] * 1.4
+						var y = arc.centroid(d)[1] * 1.4
+						return 'translate(' + x + ',' + y + ')'
+					})
+					.text(function(d) {
+						var percent = (d.value / sum) * 100
+						return Number(percent).toFixed(1) + '%'
+					})
+						
+				// 绘制连接弧外文字的直线
+				arcs.select('.conLine1')
+					.attr('x1', function(d) { return (arc.centroid(d)[0] * 2) })
+					.attr('y1', function(d) { return (arc.centroid(d)[1] * 2) })
+					.attr('x2', function(d) { return (arc.centroid(d)[0] * 2.2) })
+					.attr('y2', function(d) { return (arc.centroid(d)[1] * 2.2) })
+					.style('stroke', '#000')
+				
+				console.log(arcs)
+				// 绘制弧外文字的下划线
+				arcs.select('.conLine2')
+					.each(function(d) {
+						d.textLine = {x1:0, y1:0, x2:0, y2:0}
+					})
+					.attr('x1', function(d) {
+						d.textLine.x1 = arc.centroid(d)[0] * 2.2
+						return d.textLine.x1
+					})
+					.attr('y1', function(d) {
+						d.textLine.y1 = arc.centroid(d)[1] * 2.2
+						return d.textLine.y1
+					})
+					.attr('x2', function(d) {
+						var pixelLength = getPixelLength(d.data[0], fontsize) * 1.2
+						d.textLine.x2 = arc.centroid(d)[0] * 2.2 
+									+ (arc.centroid(d)[0] > 0 ? pixelLength : -pixelLength)
+						return d.textLine.x2
+					})
+					.attr('y2', function(d) {
+						d.textLine.y2 = arc.centroid(d)[1] * 2.2
+						return d.textLine.y2
+					})
+					.style('stroke', '#000')
+				
+				// 绘制弧外文字（公司名称）
+				arcs.select('.company')
+					.attr('transform', function(d) {
+						var x = (d.textLine.x1 + d.textLine.x2) / 2
+						// -5是为调整文字到下划线的距离
+						var y = d.textLine.y1 + (d.textLine.y1 > 0 ? fontsize : -5)
+						return 'translate(' + x + ',' + y + ')'
+					})
+					.text(function(d) { return d.data[0] })
+					.style('text-anchor', 'middle')
+					.style('font-size', fontsize)
+					.style('fill', '#000')
+				var drag = d3.behavior.drag()
+					 .origin(null)
+					 .on('drag', dragmove)
+					 .on('dragend', dragend)
+				//正在拖拽事件（drag）被触发时的监听器
+				function dragmove(d) {
+					// 加上鼠标的x/y方向的偏移量
+					d.dx += d3.event.dx
+					d.dy += d3.event.dy
+					
+					// 为被拖拽的弧的平移属性设定新值
+					d3.select(this)
+						.attr('transform', function(d) {
+							return 'translate(' + (d.circle.cx + d.dx) + ',' + (d.circle.cx + d.dy) + ')'
+						})
+				}
+				//拖拽结束事件（dragend）被触发时的监听器
+				function dragend(d, i) {
+					// 计算被拖拽的元素到饼状图圆心距离的平方
+					var dis2 = d.dx * d.dx + d.dy * d.dy
+					// 如果被拖到饼状图之外
+					if(dis2 > d.circle.r * d.circle.r) {
+						// 从原始数据中移除第i个数据（被拖拽的元素的数据），用movedData保存被移除元素的数据
+						var movedData = dataset.splice(i, 1)
+						// 重新调用布局计算dataset数组，结果保存在piedata中
+						piedata = pie(dataset)
+						// 重绘
+						redraw()
+						// 添加一个圆，用于表示被移除的元素
+						appendCircle(movedData)
+					}
+				}
+				arcs.call(drag)
+			}
+			
+			function getPixelLength(str, fontsize) {
+				var curLen = 0
+				for(var i = 0, len = str.length; i < len; i++) {
+					var code = str.charCodeAt(i)
+					var pixelLen = code > 255 ? fontsize : fontsize / 2
+					curLen += pixelLen
+				}
+				return curLen
+			}
+			
+			var circleGroups = svg.append('g')
+			
+			var dragCircle = d3.behavior.drag()
+				.origin(0, 0)
+				.on('drag', dragCircleMove)
+				.on('dragend', dragCircleEnd)
+			
+			function dragCircleMove(d) {
+				d.x = d3.event.sourceEvent.offsetX
+				d.y = d3.event.sourceEvent.offsetY
+				d3.select(this)
+					.attr('transform', 'translate(' + d.x + ',' + d.y + ')')
+			}
+			function dragCircleEnd(d, i) {
+				// 到圆心距离平方
+				var dis2 = (d.x - pieCircle.cy) * (d.x - pieCircle.cy) 
+							 + (d.y - pieCircle.cy) * (d.y - pieCircle.cy)
+				if(dis2 < pieCircle.r * pieCircle.r) {
+					dataset.push([d[0], d[1]])
+					piedata = pie(dataset)
+					d3.select(this).remove()
+					redraw()
+				}
+			}
+			function appendCircle(data) {
+				gCircle = circleGroups.append('g')
+					.data(data)
+					.attr('class', 'movedArc')
+					.attr('transform', function(d) {
+						return 'translate(' + d3.event.sourceEvent.offsetX + ',' + d3.event.sourceEvent.offsetY + ')'
+					})
+					.call(dragCircle)
+				gCircle.append('circle')
+					.attr('cx', 0)
+					.attr('cy', 0)
+					.attr('r', 20)
+					.style('fill', function(d) {
+						return color(d[0])
+					})
+				gCircle.append('text')
+					.attr('dx', '22px')
+					.attr('dy', '.4em')
+					.text(function(d) { return d[0] })
+					.style('font-size', fontsize)
+			}
+		</script>
+	</body>
+</html>
